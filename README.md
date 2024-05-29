@@ -16,6 +16,19 @@ The script uses the following configuration variables:
 - `SUBNET`: Subnet used for the VPN network.
 - `CLIENT_ADDRESS_START`: Starting IP address for clients.
 
+## Generating the Server Public Key
+
+To generate the `SERVER_PUBLIC_KEY`, you can use the following command:
+```
+wg genkey | tee privatekey | wg pubkey > publickey
+```
+This command will generate a private key and store it in the privatekey file, then use that private key to generate the corresponding public key and store it in the publickey file.
+
+Once you have the publickey file, you can use the contents of that file to set the `SERVER_PUBLIC_KEY` configuration variable in the script:
+```
+SERVER_PUBLIC_KEY = "Q+6S+bYqw8lYKG52hz/q1DMaf3/UpFBtciKU9GLguVA="  # Replace with the contents of the publickey file
+```
+
 ## Usage
 
 1. **Prerequisites:**
