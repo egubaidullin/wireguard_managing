@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
+# please install https://github.com/angristan/wireguard-install
+# curl -O https://raw.githubusercontent.com/angristan/wireguard-install/master/wireguard-install.sh
+# chmod +x wireguard-install.sh
+# ./wireguard-install.sh
 
+
+import configparser
 import json
 import os
 import subprocess
@@ -7,14 +13,21 @@ from pathlib import Path
 
 # Configuration
 WG_CONF = "/etc/wireguard/wg0.conf"
-USER_LIST = "/path_to_user_list/user_list.txt"
-CONFIG_DIR = "/path_to_users_configs/users"
-IPADDR_MAP = "/path_to_mapping_file/ipaddr-map.json"
-SERVER_PUBLIC_KEY = "__SERVER_PUBLIC_KEY__"  # Replace with your server's public key
-ENDPOINT = "xxx.xxx.xxx.xxx:port"  # Replace with your server's IP and port
-DNS = "1.1.1.1,1.0.0.1"
-SUBNET = "10.66.66"
-CLIENT_ADDRESS_START = 2
+USER_LIST = "/root/script/user_list.txt"
+CONFIG_DIR = "/root/script/users"
+IPADDR_MAP = "/root/script/ipaddr-map.json"
+
+# Read parameters from file
+config = configparser.ConfigParser()
+config.read("/etc/wireguard/params")
+
+# Set parameters
+SERVER_PUBLIC_KEY = config.get("params", "SERVER_PUB_KEY")
+ENDPOINT = f"{config.get('params', 'SERVER_PUB_IP')}:{config.get('params', 'SERVER_PORT')}"
+DNS = f"{config.get('params', 'CLIENT_DNS_1')},{config.get('params', 'CLIENT_DNS_2')}"
+SERVER_PORT = config.getint("params", "SERVER_PORT")
+SERVER_PUB_NIC = config.get("params", "SERVER_PUB_NIC")
+SERVER_WG_NIC = config.get("params", "SERVER_WG_NIC")
 
 # Ensure config directory exists
 os.makedirs(CONFIG_DIR, exist_ok=True)
@@ -92,21 +105,22 @@ for user in users:
 # Write the new wg0.conf file
 with open(WG_CONF, "w") as f:
     f.write("[Interface]\n")
-    f.write("Address = 10.66.66.1/24,fd42:42:42::1/64\n")
-    f.write("ListenPort = 50838\n")
-    f.write("PrivateKey = QB8XqQ4qSmI9Qidhvre06rxFpRU+HPBQPmgEt0tQbVE=\n")
-    f.write("PostUp = iptables -I INPUT -p udp --dport 50838 -j ACCEPT\n")
-    f.write("PostUp = iptables -I FORWARD -i eth0 -o wg0 -j ACCEPT\n")
-    f.write("PostUp = iptables -I FORWARD -i wg0 -j ACCEPT\n")
-    f.write("PostUp = iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE\n")
-    f.write("PostUp = ip6tables -I FORWARD -i wg0 -j ACCEPT\n")
-    f.write("PostUp = ip6tables -t nat -A POSTROUTING -o eth0 -j MASQUERADE\n")
-    f.write("PostDown = iptables -D INPUT -p udp --dport 50838 -j ACCEPT\n")
-    f.write("PostDown = iptables -D FORWARD -i eth0 -o wg0 -j ACCEPT\n")
-    f.write("PostDown = iptables -D FORWARD -i wg0 -j ACCEPT\n")
-    f.write("PostDown = iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE\n")
-    f.write("PostDown = ip6tables -D FORWARD -i wg0 -j ACCEPT\n")
-    f.write("PostDown = ip6tables -t nat -D POSTROUTING -o eth0 -j MASQUERADE\n")
+    f.write(f"Address = {config.get('params', 'SERVER_WG_IPV4')}/{config.get('params', 'SERVER_WG_IPV4_MASK')},"
+            f"{config.get('params', 'SERVER_WG_IPV6')}/{config.get('params', 'SERVER_WG_IPV6_MASK')}\n")
+    f.write(f"ListenPort = {SERVER_PORT}\n")
+    f.write(f"PrivateKey = {config.get('params', 'SERVER_PRIV_KEY')}\n")
+    f.write(f"PostUp = iptables -I INPUT -p udp --dport {SERVER_PORT} -j ACCEPT\n")
+    f.write(f"PostUp = iptables -I FORWARD -i {SERVER_PUB_NIC} -o {SERVER_WG_NIC} -j ACCEPT\n")
+    f.write(f"PostUp = iptables -I FORWARD -i {SERVER_WG_NIC} -j ACCEPT\n")
+    f.write(f"PostUp = iptables -t nat -A POSTROUTING -o {SERVER_PUB_NIC} -j MASQUERADE\n")
+    f.write(f"PostUp = ip6tables -I FORWARD -i {SERVER_WG_NIC} -j ACCEPT\n")
+    f.write(f"PostUp = ip6tables -t nat -A POSTROUTING -o {SERVER_PUB_NIC} -j MASQUERADE\n")
+    f.write(f"PostDown = iptables -D INPUT -p udp --dport {SERVER_PORT} -j ACCEPT\n")
+    f.write(f"PostDown = iptables -D FORWARD -i {SERVER_PUB_NIC} -o {SERVER_WG_NIC} -j ACCEPT\n")
+    f.write(f"PostDown = iptables -D FORWARD -i {SERVER_WG_NIC} -j ACCEPT\n")
+    f.write(f"PostDown = iptables -t nat -D POSTROUTING -o {SERVER_PUB_NIC} -j MASQUERADE\n")
+    f.write(f"PostDown = ip6tables -D FORWARD -i {SERVER_WG_NIC} -j ACCEPT\n")
+    f.write(f"PostDown = ip6tables -t nat -D POSTROUTING -o {SERVER_PUB_NIC} -j MASQUERADE\n")
     for user, data in ipaddr_map.items():
         f.write(f"\n### Client {user}\n")
         f.write("[Peer]\n")
