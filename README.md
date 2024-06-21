@@ -1,130 +1,53 @@
-# WireGuard Configuration Script
+# WireGuard User Management Script
 
-This script automates the process of setting up and managing WireGuard VPN users. It simplifies the configuration and deployment of WireGuard for your organization.
+This Python script automates the configuration and management of WireGuard VPN servers and clients. It dynamically reads parameters from a configuration file, generates client configurations, and updates the server configuration accordingly.
 
-## Configuration
+## Features
 
-The script uses the following configuration variables:
+- **Dynamic Parameter Loading**: Reads server parameters from `/etc/wireguard/params` to configure the WireGuard server and clients.
+- **Client Configuration Generation**: Automatically generates configuration files for each client listed in `user_list.txt`.
+- **IP Address Management**: Manages IP address assignments for clients, ensuring unique and sequential allocations.
+- **Key Generation**: Generates private, public, and preshared keys for each client.
+- **Configuration Updates**: Updates the WireGuard server configuration file (`wg0.conf`) with the latest parameters and peer configurations.
+- **Backup and Restore**: Backs up the original `wg0.conf` file before making changes and restores it if needed.
 
-- `WG_CONF`: Path to the WireGuard configuration file (`wg0.conf`).
-- `USER_LIST`: Path to the text file containing the list of users.
-- `CONFIG_DIR`: Directory where user configurations will be stored (individual files for each user).
-- `IPADDR_MAP`: JSON file mapping usernames to IP addresses and keys.
-- `SERVER_PUBLIC_KEY`: Public key of the WireGuard server (replace with your actual server's public key).
-- `ENDPOINT`: Endpoint of the WireGuard server (IP and port).
-- `DNS`: DNS servers to be used by the VPN clients.
-- `SUBNET`: Subnet used for the VPN network.
-- `CLIENT_ADDRESS_START`: Starting IP address for clients.
+## Prerequisites
 
-## Generating the Server Public Key
+Before using this script, ensure you have installed WireGuard on your server using the following script:
 
-To generate the `SERVER_PUBLIC_KEY`, you can use the following command:
-```
-wg genkey | tee privatekey | wg pubkey > publickey
-```
-This command will generate a private key and store it in the privatekey file, then use that private key to generate the corresponding public key and store it in the publickey file.
+- [WireGuard Install Script by angristan](https://github.com/angristan/wireguard-install)
 
-Once you have the publickey file, you can use the contents of that file to set the `SERVER_PUBLIC_KEY` configuration variable in the script:
-```
-SERVER_PUBLIC_KEY = "Q+6S+bYqw8lYKG52hz/q1DMaf3/UpFBtciKU9GLguVA="  # Replace with the contents of the publickey file
+This script provides a quick and easy way to set up a WireGuard server, which is a prerequisite for using the `wireguard_config_script.py` script.
+
+## Quick Start
+
+To quickly get started with the script, you can download and run it directly from GitHub using `curl`:
+
+```bash
+curl -O https://raw.githubusercontent.com/egubaidullin/wireguard_managing/main/wireguard_config_script.py
+python3 wireguard_config_script.py
 ```
 
 ## Usage
 
-1. **Prerequisites:**
-   - Ensure that WireGuard is installed on your system.
-   - Run the script with root privileges (`sudo`).
+1. **Configure Parameters**: Update the `/etc/wireguard/params` file with your server details.
+2. **List Users**: Add user names to `user_list.txt` to generate their WireGuard configurations.
+3. **Run the Script**: Execute `wireguard_config_script.py` to generate and update configurations.
 
-2. **User List:**
-   - Edit the `USER_LIST` file to include the usernames you want to configure.
+## Requirements
 
-3. **Running the Script:**
-   - Execute the Python script:
-     ```bash
-     sudo ./wireguard_config_script.py
-     ```
+- Python 3.x
+- WireGuard tools (`wg`, `wg-quick`)
+- iptables and ip6tables for firewall rules
 
-## How the Script Works
+## Contributing
 
-1. **Backup:**
-   - The script creates a backup of the original `wg0.conf` if it doesn't exist.
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-2. **User Configuration:**
-   - For each user in the `USER_LIST`:
-     - Generates private and public keys.
-     - Creates individual WireGuard configuration files.
-     - Updates the `wg0.conf` with new user configurations.
+## License
 
-3. **WireGuard Interface:**
-   - The script applies the changes to the WireGuard interface.
+[MIT](https://choosealicense.com/licenses/mit/)
 
-## Generating Client Configurations
+---
 
-- After running the script, individual configuration files for each user will be created in the `CONFIG_DIR` directory.
-- These files contain the necessary settings for each client, including private keys, IP addresses, and server details.
-
-## Creating QR Codes
-
-- If you want to generate QR codes for easy client setup, follow these steps:
-  1. Install `qrencode` on your system (if not already installed).
-     ```bash
-     sudo apt-get install qrencode
-     ```
-  2. Generate a QR code for a specific user's configuration file (e.g., `alice.conf`):
-     ```bash
-     qrencode -t ansiutf8 < /path_to_CONFIG_DIR/alice.conf
-     ```
-     This command will display the QR code in the terminal. Users can scan this code with their mobile devices to import the WireGuard configuration.
-
-## Example Configuration
-
-Below is an example of a client configuration file named `alice.conf` that would be generated for a user named Alice. This file includes all the necessary details that Alice would need to connect to the WireGuard VPN.
-
-```ini
-[Interface]
-PrivateKey = <Alice's Private Key>
-Address = 10.66.66.2/32
-DNS = 1.1.1.1, 1.0.0.1
-
-[Peer]
-PublicKey = <Server's Public Key>
-PresharedKey = <Alice's Preshared Key>
-Endpoint = <Server's Endpoint IP>:<Server's Endpoint Port>
-AllowedIPs = 0.0.0.0/0, ::/0
-```
-
-## IP Address Mapping (ipaddr-map.json)
-
-The `ipaddr-map.json` file plays a crucial role in managing user configurations within the WireGuard VPN setup. Here's how it works:
-
-1. **Purpose:**
-   - The `ipaddr-map.json` file serves as a mapping between usernames and their associated IP addresses, private keys, and other relevant information.
-   - It ensures that each user has a unique IP address within the VPN subnet.
-
-2. **Structure:**
-   - The file is in JSON format, making it easy to read and manipulate programmatically.
-   - Each entry in the map corresponds to a user and contains the following fields:
-     - `username`: The user's username (e.g., "alice").
-     - `privateKey`: The user's private key generated by the script.
-     - `publicKey`: The corresponding public key derived from the private key.
-     - `presharedKey`: A pre-shared key used for secure communication.
-     - `address`: The assigned IP address for the user (e.g., "10.66.66.2/32").
-
-3. **Updating the Map:**
-   - When a new user is added, the script generates their private and public keys.
-   - It then updates the `ipaddr-map.json` with the user's details, including the assigned IP address.
-
-4. **User Configuration Files:**
-   - The script uses the information from the `ipaddr-map.json` to create individual configuration files for each user.
-   - These files (e.g., `alice.conf`, `bob.conf`) contain the necessary settings for the WireGuard client.
-
-5. **WireGuard Interface:**
-   - The `wg0.conf` file (WireGuard server configuration) references the IP addresses from the `ipaddr-map.json`.
-   - When the WireGuard interface is brought up, it uses these IP addresses to route traffic between the server and clients.
-
-## Notes
-
-- Keep the `ipaddr-map.json` secure, as it contains sensitive information.
-- If you need to add or remove users, update the map accordingly.
-
-Feel free to customize the script to fit your organization's requirements.
+This updated description includes a quick start guide using `curl` to download the script directly from GitHub, making it easier for users to get started without cloning the repository.
