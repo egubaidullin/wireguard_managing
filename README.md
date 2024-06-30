@@ -1,53 +1,53 @@
-# WireGuard User Management Script
+# WireGuard Managing Script
 
-This Python script automates the configuration and management of WireGuard VPN servers and clients. It dynamically reads parameters from a configuration file, generates client configurations, and updates the server configuration accordingly.
+This script automates the setup and management of WireGuard VPN configurations.
 
 ## Features
 
-- **Dynamic Parameter Loading**: Reads server parameters from `/etc/wireguard/params` to configure the WireGuard server and clients.
-- **Client Configuration Generation**: Automatically generates configuration files for each client listed in `user_list.txt`.
-- **IP Address Management**: Manages IP address assignments for clients, ensuring unique and sequential allocations.
-- **Key Generation**: Generates private, public, and preshared keys for each client.
-- **Configuration Updates**: Updates the WireGuard server configuration file (`wg0.conf`) with the latest parameters and peer configurations.
-- **Backup and Restore**: Backs up the original `wg0.conf` file before making changes and restores it if needed.
+- Installs WireGuard if not already installed
+- Generates server and client configuration files
+- Manages user IP address assignments
+
+## Background
+
+Initially, I used [angristan/wireguard-install](https://github.com/angristan/wireguard-install) for installing WireGuard. To manage users, I created my own script to modify a text file and deploy from Git. Later, I decided to integrate WireGuard installation into my script for a more seamless, all-in-one solution. This script now provides a complete solution for WireGuard setup and user management.
 
 ## Prerequisites
 
-Before using this script, ensure you have installed WireGuard on your server using the following script:
-
-- [WireGuard Install Script by angristan](https://github.com/angristan/wireguard-install)
-
-This script provides a quick and easy way to set up a WireGuard server, which is a prerequisite for using the `wireguard_config_script.py` script.
-
-## Quick Start
-
-To quickly get started with the script, you can download and run it directly from GitHub using `curl`:
-
-```bash
-curl -O https://raw.githubusercontent.com/egubaidullin/wireguard_managing/main/wireguard_config_script.py
-python3 wireguard_config_script.py
-```
+- Python 3.x
+- `requests` library: Install via `pip install requests`
+- `netifaces` library: Install via `pip install netifaces`
+- Ensure you have sudo or root privileges
 
 ## Usage
 
-1. **Configure Parameters**: Update the `/etc/wireguard/params` file with your server details.
-2. **List Users**: Add user names to `user_list.txt` to generate their WireGuard configurations.
-3. **Run the Script**: Execute `wireguard_config_script.py` to generate and update configurations.
+1. **Download the Script**:
+   - Download directly: [wireguard_config_script.py](https://github.com/egubaidullin/wireguard_managing/blob/main/wireguard_config_script.py)
 
-## Requirements
+2. **Configure the Script**:
+   - Open the script and set the following variables to appropriate values:
+     - `USER_LIST`: Path to the file where user details are stored.
+     - `CONFIG_DIR`: Directory where configuration files will be generated and stored.
+     - `IPADDR_MAP`: Path to the file mapping user IP addresses.
 
-- Python 3.x
-- WireGuard tools (`wg`, `wg-quick`)
-- iptables and ip6tables for firewall rules
+   Example:
+   ```python
+   USER_LIST = '/path/to/user_list.txt'
+   CONFIG_DIR = '/path/to/config_dir'
+   IPADDR_MAP = '/path/to/ipaddr_map.txt'
+   ```
 
-## Contributing
+3. **Run the Script**:
+   - Make the script executable: `chmod +x wireguard_config_script.py`
+   - Execute the script: `sudo ./wireguard_config_script.py`
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+## Configuration
+
+- Configuration files and user details are stored as specified in the variables `USER_LIST`, `CONFIG_DIR`, and `IPADDR_MAP`.
+- The main WireGuard configuration file is located at `/etc/wireguard/wg0.conf`.
+- Parameters for the server setup are stored in `/etc/wireguard/params`.
+- User configurations are saved in the directory specified by `CONFIG_DIR`.
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
-
----
-
-This updated description includes a quick start guide using `curl` to download the script directly from GitHub, making it easier for users to get started without cloning the repository.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
