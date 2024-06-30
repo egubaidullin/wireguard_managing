@@ -22,9 +22,7 @@ Initially, I used [angristan/wireguard-install](https://github.com/angristan/wir
 ## Usage
 
 1. **Download the Script**:
-```
-wget https://raw.githubusercontent.com/egubaidullin/wireguard_managing/main/wireguard_config_script.py
-```
+- Download the script directly from the repository using the following command: `wget https://raw.githubusercontent.com/egubaidullin/wireguard_managing/main/wireguard_config_script.py`
 
 2. **Configure the Script**:
 The `SCRIPT_DIR` variable is crucial as it defines the directory where the script is located. This directory will also contain all related data, including:
@@ -32,11 +30,7 @@ The `SCRIPT_DIR` variable is crucial as it defines the directory where the scrip
 - **User Configuration Files**: Where individual user settings are stored.
 - **Auxiliary Script Files**: Any additional files the script requires to function properly.
 
-Set this variable to the path where you wish to store these items:
-
-```python
-SCRIPT_DIR = '/path/to/script'
-```
+Set this variable to the path where you wish to store these items: `SCRIPT_DIR = '/path/to/script'`
 
 3. **Add Users**:
    - Add users to the user_list.txt file must be located in the `SCRIPT_DIR` directory. Each user should be on a new line.
