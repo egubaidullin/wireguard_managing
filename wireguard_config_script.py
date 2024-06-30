@@ -12,7 +12,7 @@ import netifaces
 # Configuration
 WG_CONF = "/etc/wireguard/wg0.conf"
 PARAMS_FILE = "/etc/wireguard/params"
-SCRIPT_DIR = "/root/script"
+SCRIPT_DIR = "/path/to/script"
 USER_LIST = f"{SCRIPT_DIR}/user_list.txt"
 CONFIG_DIR = f"{SCRIPT_DIR}/users"
 IPADDR_MAP = f"{SCRIPT_DIR}/ipaddr-map.json"
