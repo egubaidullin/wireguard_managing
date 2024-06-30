@@ -59,7 +59,3 @@ SCRIPT_DIR = '/path/to/script'
 
 - Ensure you have sudo privileges to run the script and manage system configurations.
 - The script assumes a Debian-based system for package management. Adjustments may be needed for other distributions.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
