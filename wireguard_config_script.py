@@ -17,6 +17,7 @@ USER_LIST = f"{SCRIPT_DIR}/user_list.txt"
 CONFIG_DIR = f"{SCRIPT_DIR}/users"
 IPADDR_MAP = f"{SCRIPT_DIR}/ipaddr-map.json"
 
+
 def ensure_directory(path):
     """Ensure that a directory exists, creating it if necessary."""
     try:
@@ -26,6 +27,7 @@ def ensure_directory(path):
         print(f"Error: Permission denied when creating directory {path}")
         return False
 
+
 def get_external_ip():
     try:
         response = requests.get('https://api.ipify.org')
@@ -33,6 +35,7 @@ def get_external_ip():
     except requests.RequestException:
         print("Unable to get external IP. Please check your internet connection.")
         return None
+
 
 def get_default_interface():
     try:
@@ -43,6 +46,7 @@ def get_default_interface():
         print("Unable to determine default network interface. Using 'eth0' as fallback.")
         return 'eth0'
 
+
 def install_wireguard():
     try:
         subprocess.run(["apt", "update"], check=True)
@@ -52,6 +56,12 @@ def install_wireguard():
     except subprocess.CalledProcessError as e:
         print(f"Error installing WireGuard: {e}")
         return False
+
+def generate_wireguard_keys():
+    private_key = subprocess.check_output(["wg", "genkey"]).decode().strip()
+    public_key = subprocess.check_output(["wg", "pubkey"], input=private_key.encode()).decode().strip()
+    preshared_key = subprocess.check_output(["wg", "genpsk"]).decode().strip()
+    return private_key, public_key, preshared_key
 
 def create_params_file(server_pub_ip, server_pub_nic):
     config = configparser.ConfigParser()
@@ -87,6 +97,7 @@ def create_params_file(server_pub_ip, server_pub_nic):
         print(f"Error creating params file: {e}")
         return False
 
+
 def create_wg0_conf():
     wg_dir = os.path.dirname(WG_CONF)
     if not ensure_directory(wg_dir):
@@ -103,6 +114,7 @@ def create_wg0_conf():
             return False
     return True
 
+
 def ensure_script_dir():
     if not ensure_directory(SCRIPT_DIR):
         return False
@@ -117,6 +129,7 @@ def ensure_script_dir():
             return False
     return True
 
+
 def set_wg_conf_permissions():
     """Set correct permissions for WireGuard configuration file."""
     try:
@@ -124,6 +137,7 @@ def set_wg_conf_permissions():
         print(f"Permissions for {WG_CONF} set to 600 (read/write for owner only).")
     except OSError as e:
         print(f"Error setting permissions for {WG_CONF}: {e}")
+
 
 def create_wg_interface():
     """Create WireGuard interface if it doesn't exist."""
@@ -138,12 +152,13 @@ def create_wg_interface():
             return False
     return True
 
+
 def apply_wg_config():
     """Apply WireGuard configuration."""
     try:
         # Ensure the interface exists
         create_wg_interface()
-        
+
         # Apply configuration
         subprocess.run(["wg-quick", "down", "wg0"], check=False)  # Ignore errors if interface is already down
         subprocess.run(["wg-quick", "up", "wg0"], check=True)
@@ -152,6 +167,7 @@ def apply_wg_config():
     except subprocess.CalledProcessError as e:
         print(f"Error applying WireGuard configuration: {e}")
         return False
+
 
 def main():
     if not ensure_script_dir():
@@ -222,6 +238,19 @@ def main():
         except IOError as e:
             print(f"Error creating user config for {username}: {e}")
 
+    def check_and_enable_ip_forwarding():
+        with open('/proc/sys/net/ipv4/ip_forward', 'r') as f:
+            ip_forward = f.read().strip()
+
+        if ip_forward != '1':
+            print("IP forwarding is not enabled. Enabling it now...")
+            subprocess.run(['sudo', 'sysctl', '-w', 'net.ipv4.ip_forward=1'], check=True)
+            with open('/etc/sysctl.conf', 'a') as f:
+                f.write('\n# Enable IP forwarding\nnet.ipv4.ip_forward = 1\n')
+            print("IP forwarding has been enabled and set to persist across reboots.")
+        else:
+            print("IP forwarding is already enabled.")
+
     def generate_wireguard_keys():
         """Generates WireGuard keys."""
         private_key = subprocess.check_output(["wg", "genkey"]).decode().strip()
@@ -259,7 +288,8 @@ def main():
     # Assign IP addresses and generate keys for new users
     network = ipaddress.ip_network(f"{SUBNET}.0/24", strict=False)
     used_ips = set(data['address'] for data in ipaddr_map.values())
-    available_ips = (str(ip) for ip in network.hosts() if str(ip) not in used_ips and ip.packed[-1] >= CLIENT_ADDRESS_START)
+    available_ips = (str(ip) for ip in network.hosts() if
+                     str(ip) not in used_ips and ip.packed[-1] >= CLIENT_ADDRESS_START)
 
     for user in users:
         username = user.replace("@", "_")
@@ -291,7 +321,7 @@ def main():
                     f"{config.get('params', 'SERVER_WG_IPV6')}/{config.get('params', 'SERVER_WG_IPV6_MASK')}\n")
             f.write(f"ListenPort = {SERVER_PORT}\n")
             f.write(f"PrivateKey = {config.get('params', 'SERVER_PRIV_KEY')}\n")
-            
+
             # PostUp and PostDown rules
             post_up_rules = [
                 f"iptables -I INPUT -p udp --dport {SERVER_PORT} -j ACCEPT",
@@ -301,15 +331,15 @@ def main():
                 f"ip6tables -I FORWARD -i {SERVER_WG_NIC} -j ACCEPT",
                 f"ip6tables -t nat -A POSTROUTING -o {SERVER_PUB_NIC} -j MASQUERADE"
             ]
-            
+
             post_down_rules = [rule.replace("-I", "-D").replace("-A", "-D") for rule in post_up_rules]
-            
+
             for rule in post_up_rules:
                 f.write(f"PostUp = {rule}\n")
-            
+
             for rule in post_down_rules:
                 f.write(f"PostDown = {rule}\n")
-            
+
             for user, data in ipaddr_map.items():
                 f.write(f"\n### Client {user}\n")
                 f.write("[Peer]\n")
@@ -335,6 +365,20 @@ def main():
 
     # Apply the WireGuard configuration changes
 
+
+def check_and_enable_ip_forwarding():
+    with open('/proc/sys/net/ipv4/ip_forward', 'r') as f:
+        ip_forward = f.read().strip()
+
+    if ip_forward != '1':
+        print("IP forwarding is not enabled. Enabling it now...")
+        subprocess.run(['sudo', 'sysctl', '-w', 'net.ipv4.ip_forward=1'], check=True)
+        with open('/etc/sysctl.conf', 'a') as f:
+            f.write('\n# Enable IP forwarding\nnet.ipv4.ip_forward = 1\n')
+        print("IP forwarding has been enabled and set to persist across reboots.")
+    else:
+        print("IP forwarding is already enabled.")
+
 def main():
     if not ensure_script_dir():
         print("Failed to create necessary directories. Please check permissions.")
@@ -353,6 +397,8 @@ def main():
             sys.exit(1)
     else:
         print("Params file found. Skipping WireGuard installation.")
+
+    check_and_enable_ip_forwarding()
 
     if not create_wg0_conf():
         print("Failed to create WireGuard configuration file. Please check permissions and try again.")
@@ -414,7 +460,8 @@ def main():
     # Assign IP addresses and generate keys for new users
     network = ipaddress.ip_network(f"{SUBNET}.0/24", strict=False)
     used_ips = set(data['address'] for data in ipaddr_map.values())
-    available_ips = (str(ip) for ip in network.hosts() if str(ip) not in used_ips and ip.packed[-1] >= CLIENT_ADDRESS_START)
+    available_ips = (str(ip) for ip in network.hosts() if
+                     str(ip) not in used_ips and ip.packed[-1] >= CLIENT_ADDRESS_START)
 
     for user in users:
         username = user.replace("@", "_")
@@ -446,7 +493,7 @@ def main():
                     f"{config.get('params', 'SERVER_WG_IPV6')}/{config.get('params', 'SERVER_WG_IPV6_MASK')}\n")
             f.write(f"ListenPort = {SERVER_PORT}\n")
             f.write(f"PrivateKey = {config.get('params', 'SERVER_PRIV_KEY')}\n")
-            
+
             # PostUp and PostDown rules
             post_up_rules = [
                 f"iptables -I INPUT -p udp --dport {SERVER_PORT} -j ACCEPT",
@@ -456,15 +503,15 @@ def main():
                 f"ip6tables -I FORWARD -i {SERVER_WG_NIC} -j ACCEPT",
                 f"ip6tables -t nat -A POSTROUTING -o {SERVER_PUB_NIC} -j MASQUERADE"
             ]
-            
+
             post_down_rules = [rule.replace("-I", "-D").replace("-A", "-D") for rule in post_up_rules]
-            
+
             for rule in post_up_rules:
                 f.write(f"PostUp = {rule}\n")
-            
+
             for rule in post_down_rules:
                 f.write(f"PostDown = {rule}\n")
-            
+
             for user, data in ipaddr_map.items():
                 f.write(f"\n### Client {user}\n")
                 f.write("[Peer]\n")
@@ -496,6 +543,7 @@ def main():
     print("\nSetup complete!")
     if not users:
         print(f"Remember to add users to {USER_LIST} and run the script again to configure clients.")
+
 
 if __name__ == "__main__":
     main()
