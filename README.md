@@ -1,4 +1,4 @@
-# WireGuard Managing Script
+# WireGuard Management Script
 
 This script automates the setup and management of WireGuard VPN configurations.
 
@@ -33,12 +33,12 @@ The `SCRIPT_DIR` variable is crucial as it defines the directory where the scrip
 Set this variable to the path where you wish to store these items: `SCRIPT_DIR = '/path/to/script'`
 
 3. **Add Users**:
-   - Add users to the user_list.txt file must be located in the `SCRIPT_DIR` directory. Each user should be on a new line.
-   - 
-4.  **Make the Script Executable**:
+   - Add users to the `user_list.txt` file located in the `SCRIPT_DIR` directory. Each user should be on a new line.
+
+4. **Make the Script Executable**:
    - Ensure the script is executable by running: `chmod +x wireguard_config_script.py`
 
-5.  **Run the Script**:
+5. **Run the Script**:
    After adding/removing users, run the script to generate their configurations and apply the changes.
    - Execute the script: `sudo ./wireguard_config_script.py`
 
@@ -48,6 +48,22 @@ Set this variable to the path where you wish to store these items: `SCRIPT_DIR =
 - The main WireGuard configuration file is located at `/etc/wireguard/wg0.conf`.
 - Parameters for the server setup are stored in `/etc/wireguard/params`.
 - User configurations are saved in the directory specified by `CONFIG_DIR`.
+
+### Default Parameters
+
+The script uses default parameters for the WireGuard setup. These include:
+
+- `SERVER_WG_NIC`: Network interface for the WireGuard server (default: `wg0`)
+- `SERVER_WG_IPV4`: IPv4 address for the WireGuard server (default: `10.66.66.1`)
+- `SERVER_WG_IPV4_MASK`: Subnet mask for the IPv4 address (default: `24`)
+- `SERVER_WG_IPV6`: IPv6 address for the WireGuard server (default: `fd42:42:42::1`)
+- `SERVER_WG_IPV6_MASK`: Subnet mask for the IPv6 address (default: `64`)
+- `SERVER_PORT`: Port for the WireGuard server (default: `51820`)
+- `CLIENT_DNS_1` and `CLIENT_DNS_2`: DNS servers for clients (default: `1.1.1.1` and `1.0.0.1`)
+
+### Customizing Parameters
+
+If you wish to change any of the default parameters, you can do so by editing the `/etc/wireguard/params` file. This file uses INI format, and you can modify the values under the `[params]` section.
 
 ## Notes
 
