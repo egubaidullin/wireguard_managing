@@ -15,6 +15,7 @@ Initially, I used [angristan/wireguard-install](https://github.com/angristan/wir
 ## Prerequisites
 
 - Python 3.x
+- Install `apt install python3-pip`
 - `requests` library: Install via `pip install requests`
 - `netifaces` library: Install via `pip install netifaces`
 - Ensure you have sudo or root privileges
