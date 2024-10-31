@@ -62,6 +62,24 @@ The script uses default parameters for the WireGuard setup. These include:
 - `SERVER_PORT`: Port for the WireGuard server (default: `51820`)
 - `CLIENT_DNS_1` and `CLIENT_DNS_2`: DNS servers for clients (default: `1.1.1.1` and `1.0.0.1`)
 
+example:
+```
+[params]
+SERVER_PUB_IP=xx.xx.xx.xx
+SERVER_PUB_NIC=eth0
+SERVER_WG_NIC=wg0
+SERVER_WG_IPV4=10.66.66.1
+SERVER_WG_IPV6=fd42:42:42::1
+SERVER_WG_IPV4_MASK=24
+SERVER_WG_IPV6_MASK=64 
+SERVER_PORT=51559
+SERVER_PRIV_KEY=46TRObSvKZgABPzjGSj2467+emPP1KsY/lOorBoFJ1I=
+SERVER_PUB_KEY=TGt/uperjsvvuP43ZVB7q44pl4sPxNnjOqnom1zFMzHE=
+CLIENT_DNS_1=1.1.1.1
+CLIENT_DNS_2=1.0.0.1
+ALLOWED_IPS=0.0.0.0/0,::/0
+```
+
 ### Customizing Parameters
 
 If you wish to change any of the default parameters, you can do so by editing the `/etc/wireguard/params` file. This file uses INI format, and you can modify the values under the `[params]` section.
